@@ -51,6 +51,7 @@ jobs:
       working-directory: ./backend
       run: |
         podman build -t backend-app:latest .
+        ls -lah
 
     - name: Tag Image 
       run: |
