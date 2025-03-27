@@ -1,52 +1,32 @@
-name: Deploy MERN App
+name: Deploy MERN Backend via Podman
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  Deploy:
+  deploy:
+    name: Build & Deploy Backend
     runs-on: linux-oracle
+
     steps:
-    - name: Checkout repo
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4.3.0
-      with:
-        node-version: '23'
-        cache: 'npm'
-        cache-dependency-path: 'backend/package-lock.json'
-
-    - name: Install dependencies
+    - name: Build Backend Image
+      working-directory: ./backend
       run: |
-        cd backend
-        npm install
-        npm install pm2 -g
+        podman build -t backend-app .
 
-    - name: Install the application
+    - name: Stop & Remove Old Container (if running)
       run: |
-        pm2 restart ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+        podman stop backend || true
+        podman rm backend || true
 
-  Release:
-    runs-on: linux-oracle
-    needs: [Deploy]
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-
-    - name: Zip files
+    - name: Run Backend Container
       run: |
-        zip -r backend.zip backend/
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          backend.zip
-        token: ${{ secrets.REPO_TOKEN }}
-        release_name: Release ${{ github.run_number }}
-        body: ${{ github.event.head_commit.message }}
-        tag: ${{ github.run_number }}
-        draft: false
-        prerelease: false
+        podman run -d \
+          --name backend \
+          -p 8000:8000 \
+          --restart=always \
+          backend-app
