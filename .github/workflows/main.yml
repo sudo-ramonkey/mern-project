@@ -18,9 +18,6 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'backend/package-lock.json'
 
-    - name: Change directory
-      run: cd backend/
-
     - name: Install the application
       run: |
         cd backend
