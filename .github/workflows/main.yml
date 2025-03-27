@@ -18,6 +18,10 @@ jobs:
       run: |
         podman build -t backend-app .
 
+    - name: Check all pods running
+      run: |
+        podman ps -a
+
     - name: Stop & Remove Old Container (if running)
       run: |
         podman stop backend || true
