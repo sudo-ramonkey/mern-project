@@ -5,11 +5,14 @@ on:
     branches: [ main ]
 
 jobs:
-  deploy:
+  Deploy:
     runs-on: linux-oracle
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
+
+    - name: Change directory
+      run: cd backend/
 
     - name: Setup Node.js
       uses: actions/setup-node@v4.3.0
@@ -21,7 +24,27 @@ jobs:
       run: |
         cd backend
         npm install
-        npm run build
         pm2 restart ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
 
- 
+  Release:
+    runs-on: linux-oracle
+    needs: [Deploy]
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Zip files
+      run: |
+        zip -r backend.zip backend/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          backend.zip
+        token: ${{ secrets.REPO_TOKEN }}
+        release_name: Release ${{ github.run_number }}
+        body: ${{ github.event.head_commit.message }}
+        tag: ${{ github.run_number }}
+        draft: false
+        prerelease: false
